@@ -1,0 +1,97 @@
+
+clc;
+clear;
+close all;
+
+% HATA OUTDOOR PROPAGATION MODEL
+
+% Input Parameters
+f = input('Enter frequency (MHz) [150-1500]: ');
+hb = input('Enter base station antenna height (m) [30-200]: ');
+hm = input('Enter mobile station antenna height (m) [1-10]: ');
+d = input('Enter distance (km) [1-20]: ');
+
+% Input Validation
+if f < 150 || f > 1500
+    error('Frequency must be between 150 and 1500 MHz.');
+end
+
+if hb < 30 || hb > 200
+    error('Base station antenna height must be between 30 and 200 m.');
+end
+
+if hm < 1 || hm > 10
+    error('Mobile station antenna height must be between 1 and 10 m.');
+end
+
+if d < 1 || d > 20
+    error('Distance must be between 1 and 20 km.');
+end
+
+% Mobile Antenna Correction Factor
+ahm = (1.1*log10(f) - 0.7)*hm ...
+    - (1.56*log10(f) - 0.8);
+
+% Urban Area Path Loss
+PL_urban = 69.55 + 26.16*log10(f) ...
+    - 13.82*log10(hb) ...
+    - ahm ...
+    + (44.9 - 6.55*log10(hb))*log10(d);
+
+% Suburban Area Path Loss
+PL_suburban = PL_urban ...
+    - 2*(log10(f/28))^2 ...
+    - 5.4;
+
+% Open Rural Area Path Loss
+PL_open = PL_urban ...
+    - 4.78*(log10(f))^2 ...
+    + 18.33*log10(f) ...
+    - 40.94;
+
+% Display Results
+fprintf('\n===== HATA MODEL PATH LOSS =====\n');
+
+fprintf('Urban Area Path Loss = %.2f dB\n', PL_urban);
+fprintf('Suburban Area Path Loss = %.2f dB\n', PL_suburban);
+fprintf('Open Rural Area Path Loss = %.2f dB\n', PL_open);
+
+% Graph: Distance vs Path Loss
+d_plot = 1:0.5:20;
+
+% Urban Area
+PLu = 69.55 + 26.16*log10(f) ...
+    - 13.82*log10(hb) ...
+    - ahm ...
+    + (44.9 - 6.55*log10(hb)).*log10(d_plot);
+
+% Suburban Area
+PLs = PLu - 2*(log10(f/28))^2 - 5.4;
+
+% Open Rural Area
+PLo = PLu - 4.78*(log10(f))^2 ...
+    + 18.33*log10(f) ...
+    - 40.94;
+
+% Plot Graph
+figure;
+
+plot(d_plot, PLu, 'r-o', 'LineWidth', 2);
+hold on;
+
+plot(d_plot, PLs, 'b-s', 'LineWidth', 2);
+
+plot(d_plot, PLo, 'g-^', 'LineWidth', 2);
+
+grid on;
+
+xlabel('Distance (km)');
+ylabel('Path Loss (dB)');
+
+title('Hata Outdoor Propagation Model');
+
+legend('Urban Area', 'Suburban Area', 'Open Rural Area', ...
+    'Location', 'northwest');
+
+hold off;
+
